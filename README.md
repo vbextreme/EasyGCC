@@ -2,6 +2,10 @@ EasyGCC v0.1
 ============
 Color output of gcc
 
+Setting
+=======
+on "~/.config/easygcc/setting" you can change color output, view easyframework/easyconsole/easyconsole.h for more info to value color.
+
 Bug:
 ====
 (0.1)none
