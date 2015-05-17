@@ -1,0 +1,21 @@
+#!/bin/bash
+
+echo "-------------------"
+echo "- Install EasyGCC -"
+echo "-------------------"
+echo ""
+
+make -f ./makefile.auto appinstall
+if [[ $? != 0 ]]; then
+	./easystatus "report error on https://github.com/vbextreme/EasyGCC/issues"
+	./easystatus -e
+	exit 1
+fi
+./easystatus "install"
+./easystatus -o
+
+echo "------------"
+echo "- Complete -"
+echo "------------"
+echo ""
+

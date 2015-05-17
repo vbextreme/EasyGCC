@@ -1,0 +1,72 @@
+#!/bin/bash
+
+###############
+#easy generate#
+###############
+
+#argument
+if [[ $# -eq 1 ]]; then
+	if [ $1 = "--fake-gcc" ]; then
+		exdef="-DFAKE_GCC"
+		exins="mv /usr/bin/gcc /usr/bin/gcc.fake; mv /usr/bin/easygcc /usr/bin/gcc"
+		exuni="rm /usr/bin/gcc; mv /usr/bin/gcc.fake /usr/bin/gcc"
+	fi
+fi
+
+#+x
+chmod +x ./easystatus
+chmod +x ./easyrequest
+chmod +x ./easymkf
+chmod +x ./install
+
+#check app
+./easyrequest -a "gcc make"
+if [[ $? = 1 ]]; then
+	exit 1 
+fi
+
+#check header
+./easyrequest "/usr/include" "easytype.h easyconsole.h easyfile.h easystring.h easyprocess.h stdlib.h stdio.h string.h"
+if [[ $? = 1 ]]; then
+	exit 1
+fi
+
+#check lib
+./easyrequest "/usr/lib" "libeasyconsole.so libeasyfile.so libeasyprocess.so libeasystring.so"
+if [[ $? = 1 ]]; then
+	exit 1
+fi
+
+export destmk="makefile.auto"
+export appprj="easygcc"
+export libso="-leasyconsole -leasyfile -leasyprocess -leasystring"
+export liba=""
+export gccflg="-Wall -O3"
+export ldflg="-O3"
+export appdef="$exdef"
+export libdef=""
+export extrai="$exins"
+export extrau="$exuni"
+export ldapp="ld"
+
+./easymkf 
+./easystatus "makefile.auto"
+./easystatus -o
+
+rm -r ./obj
+mkdir ./obj
+make -f ./makefile.auto app
+
+if [[ $? != 0 ]]; then
+	./easystatus "report error on https://github.com/vbextreme/EasyGCC/issues"
+	./easystatus -e
+	exit 1
+fi
+
+./easystatus "make easygcc"
+./easystatus -o
+
+echo ""
+./easystatus "Generate easygcc"
+./easystatus -o
+echo ""
