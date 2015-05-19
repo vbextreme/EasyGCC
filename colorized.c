@@ -16,83 +16,116 @@ VOID czed_sep(OPZG* o)
 	con_setcolor(o->bk.normal,o->fn.normal);
 }
 
-static VOID czed_pcolor(OPZG* o, CHAR* c)
+
+static VOID czed_colorized(OPZG* o, CHAR* s, INT32 mode)
 {
-	CHAR* f = c;
-	CHAR nwo[1024];
-	
-	///filename
-	f = strchr(c,':');
-		if ( !f ) {printf("!!!ERROR EASYGCC fname[%s]!!!\n",c);return;}
-	strncpy(nwo,c,f - c);
-	nwo[f-c] = '\0';
+
 	con_setcolor(o->bk.fname,o->fn.fname);
-	printf("%s",nwo);
+	while ( *s && *s != ':' ) putchar(*s++);
+
 	con_setcolor(o->bk.normal,o->fn.normal);
-	printf(":");
+	putchar(*s++);
 	
-	/// in function
-	c = f + 1;
-	if ( strstr(c,"In function") )
+	if ( mode != 2 )
 	{
-		con_setcolor(o->bk.infunction,o->fn.infunction);
-		printf("%s",c);
+		con_setcolor(o->bk.idline,o->fn.idline);
+		while ( *s && *s != ':' ) putchar(*s++);
+		putchar(*s++);
+		while ( *s && *s != ':' ) putchar(*s++);
+		
+		con_setcolor(o->bk.normal,o->fn.normal);
+		putchar(*s++);
+	}
+			
+	
+	switch ( mode )
+	{
+		case 0:	con_setcolor(o->bk.error,o->fn.error); break;
+		case 1:	con_setcolor(o->bk.warning,o->fn.warning); break;
+		case 2:	con_setcolor(o->bk.infunction,o->fn.infunction); break;
+		case 3:	con_setcolor(o->bk.note,o->fn.note); break;
+	}
+
+	if ( o->fill )
+	{
+		while ( *s ) putchar(*s++);
+		con_setcolor(0,0);
 		return;
 	}
-	else if ( !strncmp(c," error",6) )
-	{
-		con_setcolor(o->bk.error,o->fn.error);
-		printf("%s",c);
-		return;
-	}
 	
-	///rc
-	f = strchr(c,':');
-		if ( !f ) {printf("!!!ERROR EASYGCC rc0!!!\n");return;}
-	++f;
-	f = strchr(f,':');
-		if ( !f ) {printf("!!!ERROR EASYGCC rc1!!!\n");return;}
-	strncpy(nwo,c,f - c);
-	nwo[f-c] = '\0';
+	while ( *s && *s != ':' ) putchar(*s++);
+
+	con_setcolor(o->bk.normal,o->fn.normal);
+	putchar(*s++);
+	
 	con_setcolor(o->bk.rc,o->fn.rc);
-	printf("%s",nwo);
-	con_setcolor(o->bk.normal,o->fn.normal);
-	printf(":");
+	while ( *s ) putchar(*s++);
+
+	con_setcolor(0,0);
+}
+
+static BOOL token_find(INT32 typea, TOKEN* s, INT32 typeb, CHAR* val)
+{
+	return ( !strncmp(s->name,val,typeb) ) ? TRUE : FALSE;
+}
+
+static VOID czed_hcol(OPZG* o, CHAR* s)
+{
+	BOOL bks = TRUE;
+	CHAR* entk;
+	INT32 l;
 	
-	///type msg
-	c = f + 1;
-	if ( strstr(c,"error") )
+	while ( *s )
 	{
-		con_setcolor(o->bk.error,o->fn.error);
-		printf("%s",c);
-	}
-	else if ( strstr(c,"warning") )
-	{
-		con_setcolor(o->bk.warning,o->fn.warning);
-		printf("%s",c);
-	}
-	else if ( strstr(c,"note") )
-	{
-		con_setcolor(o->bk.note,o->fn.note);
-		printf("%s",c);
-	}
-	else
-	{
-		printf("!!!EASY GCC COMANDO INATTESO \"%s\"!!!\n",c);
+		while (*s && (*s == ' ' || *s == '\t' || *s == '\n' )) putchar(*s++);
+		
+		if ( bks )
+		{
+			if ( *s == '^' ) 
+			{
+				con_setcolor(o->bk.carret,o->fn.carret);
+				putchar(*s++);
+				con_setcolor(o->bk.normal,o->fn.normal);
+				bks = FALSE;
+				continue;
+			}
+			else if (  *s != ' ' && *s != '\t' )	
+				bks = FALSE;
+			else if ( *s != '\n' )
+				bks = TRUE;
+		}
+		
+		entk = str_movetos(s," \t,;.(){}[]\n");
+		l = entk - s;
+		
+		ELEMENT* e = lhs_find(&o->tk,mth_hash(s,l,HASH_SIZE),l,s,(CBKLSTFIND)token_find);
+		if ( e )
+			con_setcolor(0,((TOKEN*)(e->data))->val);
+		
+		while ( *s && s <= entk ) putchar(*s++);
+		con_setcolor(o->bk.normal, o->fn.normal);
 	}
 }
 
-VOID czed_chkcolor(OPZG* o, CHAR* s)
+VOID czed_parse(OPZG* o, CHAR* s)
 {
-	if ( strstr(s,"error") || strstr(s,"warning") || strstr(s,"In function") || strstr(s,"note") )
+	if ( !strchr(s,':') )
 	{
-		if ( strchr(s,':') )
-		{
-			czed_pcolor(o, s);
-			return;
-		}
+		czed_hcol(o,s);
+		con_setcolor(o->bk.normal, o->fn.normal);
+		return;
 	}
-
+	
+	if ( strstr(s,"error") ) 
+		czed_colorized(o,s,0);
+	else if ( strstr(s,"warning") )
+		czed_colorized(o,s,1);
+	else if ( strstr(s,"In function") )
+		czed_colorized(o,s,2);
+	else if ( strstr(s,"note") )
+		czed_colorized(o,s,3);
+	else
+		czed_hcol(o,s);
+	
 	con_setcolor(o->bk.normal, o->fn.normal);
-	printf("%s",s);
 }

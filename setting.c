@@ -1,15 +1,17 @@
 #include "easygcc.h"
 
-static CHAR *colname[9] = { "div",
-							"infunction",
-							"error",
-							"warning",
-							"note",
-							"normal",
-							"fname",
-							"rc",
-							NULL
-						  };
+static CHAR *colname[11] = { "div",
+							 "infunction",
+							 "error",
+							 "warning",
+							 "note",
+							 "normal",
+							 "fname",
+							 "rc",
+							 "idline",
+							 "carret",
+							 NULL
+						   };
 
 static VOID setting_map(INT32* colmap[], ICOL* c)
 {
@@ -21,7 +23,9 @@ static VOID setting_map(INT32* colmap[], ICOL* c)
 	colmap[5] = &c->normal;
 	colmap[6] = &c->fname;
 	colmap[7] = &c->rc;
-	colmap[8] = NULL;
+	colmap[8] = &c->idline;
+	colmap[9] = &c->carret;
+	colmap[10] = NULL;
 }
 
 VOID setting_save(OPZG* o)
@@ -40,6 +44,7 @@ VOID setting_save(OPZG* o)
 		if ( !f ) return;
 	
 	cfg_write("sep",(o->sep)?"true":"false",f);
+	cfg_write("fill",(o->fill)?"true":"false",f);
 	
 	CHAR n[512];
 	CHAR v[512];
@@ -67,14 +72,17 @@ VOID setting_save(OPZG* o)
 VOID setting_load(OPZG* o)
 {
 	o->sep = TRUE;
+	o->fill = FALSE;
 	o->fn.div = CON_COLOR_WHYTE;
 	o->fn.error = CON_COLOR_RED;
 	o->fn.infunction = CON_COLOR_LBLUE;
 	o->fn.normal = 0;
 	o->fn.note = CON_COLOR_LRED;
 	o->fn.warning = CON_COLOR_LYELLOW;
-	o->fn.fname = CON_COLOR_BLUE;
-	o->fn.rc = CON_COLOR_GREEN;
+	o->fn.fname = CON_COLOR_LBLUE;
+	o->fn.rc = CON_COLOR_WHYTE;
+	o->fn.idline = CON_COLOR_LGREEN;
+	o->fn.carret = CON_COLOR_BLUE;
 	o->bk.div = 0;
 	o->bk.error = 0;
 	o->bk.fname = 0;
@@ -83,6 +91,8 @@ VOID setting_load(OPZG* o)
 	o->bk.note = 0;
 	o->bk.rc = 0;
 	o->bk.warning = 0;
+	o->bk.idline = 0;
+	o->bk.carret = 0;
 	
 	CHAR ph[1024];
 		sprintf(ph, "%s/%s", pht_homedir(), FILE_SETTING);
@@ -129,6 +139,67 @@ VOID setting_load(OPZG* o)
 		{
 			o->sep = (!strcmp(v,"true"))? TRUE : FALSE;
 		}
+		else if ( !strcmp(n,"fill") )
+		{
+			o->fill = (!strcmp(v,"true"))? TRUE : FALSE;
+		}
+	}
+	
+	fclose(f);
+}
+
+static VOID token_save()
+{
+	CHAR ph[1024];
+		sprintf(ph, "%s/%s", pht_homedir(), FILE_TOKEN);
+		
+	FILE* f = fopen(ph,"w");
+		if ( !f ) return;
+	
+	cfg_write("int","32",f);
+	cfg_write("short","32",f);
+	cfg_write("char","32",f);
+	cfg_write("double","32",f);
+	cfg_write("float","32",f);
+	cfg_write("long","32",f);
+	cfg_write("struct","32",f);
+	cfg_write("static","32",f);
+	cfg_write("void","32",f);
+	cfg_write("if","97",f);
+	cfg_write("for","97",f);
+	cfg_write("while","97",f);
+	cfg_write("do","97",f);
+	cfg_write("return","97",f);
+	
+	fclose(f);
+}
+
+static TOKEN* token_new(CHAR* name, INT32 val)
+{
+	TOKEN* tk = malloc(sizeof(TOKEN));
+	strcpy(tk->name,name);
+	tk->val = val;
+	return tk;
+}
+
+VOID token_load(OPZG* o)
+{
+	lhs_init(&o->tk,HASH_SIZE);
+	
+	CHAR ph[1024];
+		sprintf(ph, "%s/%s", pht_homedir(), FILE_TOKEN);
+		
+	FILE* f = fopen(ph,"r");
+		if ( !f ) token_save();
+	if ( !(f=fopen(ph,"r")) ) return;
+	
+	CHAR n[512];
+	CHAR v[512];
+	
+	while ( cfg_read(n,v,f) )
+	{
+		ELEMENT* e = element_new(0,token_new(n,atoi(v)),TRUE,NULL);
+		lhs_add(&o->tk,mth_hash(n,strlen(n),HASH_SIZE),e);
 	}
 	
 	fclose(f);

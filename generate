@@ -8,7 +8,11 @@
 if [[ $# -eq 1 ]]; then
 	if [ $1 = "--fake-gcc" ]; then
 		exdef="-DFAKE_GCC"
-		exins="mv /usr/bin/gcc /usr/bin/gcc.fake; mv /usr/bin/easygcc /usr/bin/gcc"
+		if [ -e /usr/bin/gcc.fake ]; then
+			exins="mv /usr/bin/easygcc /usr/bin/gcc"
+		else
+			exins="mv /usr/bin/gcc /usr/bin/gcc.fake; mv /usr/bin/easygcc /usr/bin/gcc"
+		fi
 		exuni="rm /usr/bin/gcc; mv /usr/bin/gcc.fake /usr/bin/gcc"
 	fi
 fi
@@ -26,20 +30,20 @@ if [[ $? = 1 ]]; then
 fi
 
 #check header
-./easyrequest "/usr/include" "easytype.h easyconsole.h easyfile.h easystring.h easyprocess.h stdlib.h stdio.h string.h"
+./easyrequest "/usr/include" "easytype.h easyconsole.h easyfile.h easystring.h easyprocess.h easymath.h easylist.h stdlib.h stdio.h string.h"
 if [[ $? = 1 ]]; then
 	exit 1
 fi
 
 #check lib
-./easyrequest "/usr/lib" "libeasyconsole.so libeasyfile.so libeasyprocess.so libeasystring.so"
+./easyrequest "/usr/lib" "libeasyconsole.so libeasyfile.so libeasyprocess.so libeasystring.so libeasylist.so libeasymath.so"
 if [[ $? = 1 ]]; then
 	exit 1
 fi
 
 export destmk="makefile.auto"
 export appprj="easygcc"
-export libso="-leasyconsole -leasyfile -leasyprocess -leasystring"
+export libso="-leasyconsole -leasyfile -leasyprocess -leasystring -leasylist -leasymath"
 export liba=""
 export gccflg="-Wall -O3"
 export ldflg="-O3"
