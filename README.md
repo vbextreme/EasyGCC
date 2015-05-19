@@ -1,14 +1,18 @@
-EasyGCC v0.1
+EasyGCC v0.3
 ============
-Color output of gcc
+Colora l'output di gcc, personalizza i colori e i token usati.
 
 Setting
 =======
-on "~/.config/easygcc/setting" you can change color output, view easyframework/easyconsole/easyconsole.h for more info to value color.
+le impostazioni dei colori si trovano<br/>
+"~/.config/easygcc/setting"<br/>
+i token con relativi colori sono in<br/>
+"~/.config/easygcc/token"<br/>
+I colori sono in formato vt100.
 
 Bug:
 ====
-(0.1)none
+(0.3)none
 
 Require:
 ========
@@ -16,10 +20,10 @@ Easy Framework https://github.com/vbextreme/EasyFramework
 
 To install it:
 ==============
-Color output using compile easygcc<br/>
+Installazione normale, richiede di compilare tramite easygcc al posto di gcc per ottenere i colori<br/>
 $ ./generate<br/>
 <br/>
-Color output using compile gcc</br>
+Per usare direttamente gcc</br>
 $ ./generate --fake-gcc<br/>
 $ sudo ./install
 
